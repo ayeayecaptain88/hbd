@@ -367,7 +367,7 @@
     </div>
 
     <!-- SPOTIFY EMBED BACKGROUND TRACK PLAYER -->
-    <iframe id="spotifyPlaybackBridge" style="border-radius:12px; display:none;" src="https://open.spotify.com/track/7LbUv7w2z7rEbNqp1uIL9U?si=edd87d9362e64f5c" width="100%" height="152" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+   <audio id="spotifyPlaybackBridge" src="The 1975 - fallingforyou.mp3" loop></audio>
 
     <!-- MAIN DUNGEON COMPONENT GRID -->
     <div class="game-viewport" id="viewport">
@@ -574,21 +574,32 @@ AYENNE GANDA`;
             { id: 'obj-loot', overlayId: 'page-loot', x: 420, y: 420, name: "BOSS LOOT BOX" }
         ];
 
-        vinylAudioToggle.addEventListener('click', () => {
-            if (isMuted) {
-                isMuted = false;
-                vinylAudioToggle.innerText = "AUDIO: ON";
-                vinylAudioToggle.classList.remove('muted');
-                pixelVinyl.classList.add('vinyl-playing');
-                spotifyBridge.contentWindow.postMessage('{"command":"play"}', '*');
-            } else {
-                isMuted = true;
-                vinylAudioToggle.innerText = "AUDIO: OFF";
-                vinylAudioToggle.classList.add('muted');
-                pixelVinyl.classList.remove('vinyl-playing');
-                spotifyBridge.contentWindow.postMessage('{"command":"pause"}', '*');
-            }
+        // Audio Engine Toggle Controller
+vinylAudioToggle.addEventListener('click', () => {
+    const audioTrack = document.getElementById('spotifyPlaybackBridge');
+    
+    if (isMuted) {
+        // Play State Sequence
+        isMuted = false;
+        vinylAudioToggle.innerText = "AUDIO: ON";
+        vinylAudioToggle.classList.remove('muted');
+        pixelVinyl.classList.add('vinyl-playing');
+        
+        // Triggers the local MP3 play stream
+        audioTrack.play().catch(err => {
+            console.log("Audio playback delayed until player asset interaction.");
         });
+    } else {
+        // Mute State Sequence
+        isMuted = true;
+        vinylAudioToggle.innerText = "AUDIO: OFF";
+        vinylAudioToggle.classList.add('muted');
+        pixelVinyl.classList.remove('vinyl-playing');
+        
+        // Halts the local MP3 play stream
+        audioTrack.pause();
+    }
+});
 
         document.getElementById('bootGameBtn').addEventListener('click', () => { closeAllOverlays(); });
 
