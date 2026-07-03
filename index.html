@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Birthday Quest: Dungeon Edition ⚔️</title>
+    <!-- True 8-Bit Pixel Game Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- 1. SYSTEM CONFIG & UPSCALED RETRO THEME --- */
+        :root {
+            --game-black: #000000;
+            --quest-green: #39ff14; 
+            --quest-cyan: #00ffff;  
+            --quest-white: #ffffff;
+            --star-gold: #ffff00;
+            --laser-red: #ff3333;
+            --brick-dark: #1a110b;
+            --floor-stone: #3a261c;
+            --pixel-font: 'Press Start 2P', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #05010a;
+            color: var(--quest-white);
+            font-family: var(--pixel-font);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- 2. ENHANCED GAME HUD BAR WITH VINYL WIDGET --- */
+        .hud-bar {
+            width: 95vw;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            background: var(--game-black);
+            padding: 16px 24px;
+            border: 5px dashed var(--quest-cyan);
+            z-index: 10;
+        }
+
+        .hud-text {
+            font-size: 0.8rem;
+            color: var(--quest-white);
+            letter-spacing: 1px;
+        }
+
+        .spotify-vinyl-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #111;
+            padding: 6px 12px;
+            border: 2px solid #333;
+        }
+
+        .vinyl-disc {
+            width: 32px;
+            height: 32px;
+            background: radial-gradient(circle, #000 25%, var(--quest-green) 26%, #111 40%, #000 70%);
+            border-radius: 50%;
+            border: 2px dashed #fff;
+            animation: spin 3s linear infinite;
+            animation-play-state: paused;
+            image-rendering: pixelated;
+        }
+
+        .vinyl-playing {
+            animation-play-state: running;
+            border-color: var(--quest-cyan);
+        }
+
+        .audio-btn {
+            font-family: var(--pixel-font);
+            font-size: 0.5rem;
+            background: var(--game-black);
+            color: var(--quest-green);
+            border: 1px solid var(--quest-green);
+            padding: 4px 6px;
+            cursor: pointer;
+        }
+        .audio-btn.muted {
+            color: var(--laser-red);
+            border-color: var(--laser-red);
+        }
+
+        /* --- 3. EXPANDED DUNGEON VIEWPORT GRAPHICS --- */
+        .game-viewport {
+            width: 95vw;
+            max-width: 900px;
+            height: 75vh;
+            max-height: 600px;
+            background-color: var(--floor-stone);
+            background-image: 
+                linear-gradient(var(--brick-dark) 4px, transparent 4px),
+                linear-gradient(90deg, var(--brick-dark) 4px, transparent 4px);
+            background-size: 50px 50px;
+            border: 8px double var(--quest-white);
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 60px #000, 0 0 40px rgba(0,0,0,0.9);
+        }
+
+        .dungeon-wall {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 35px;
+            background: #261710;
+            border-bottom: 4px solid #000;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 40px;
+            font-size: 1.2rem;
+            color: #ff6600;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        /* --- 4. TOP-DOWN ENVIRONMENT STATIONS --- */
+        .world-object {
+            position: absolute;
+            font-size: 2.5rem;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            image-rendering: pixelated;
+            cursor: pointer;
+            z-index: 4;
+        }
+
+        .object-label {
+            position: absolute;
+            top: -25px;
+            font-size: 0.55rem;
+            background: var(--game-black);
+            color: var(--quest-cyan);
+            padding: 4px 6px;
+            border: 2px solid var(--quest-cyan);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        #obj-cake {
+            display: none;
+            animation: bounce 0.5s infinite alternate steps(2);
+        }
+
+        /* --- 5. UPDATED CHARACTER GRAPHIC CORE (Specs + Black Hoodie + Walk Cycle) --- */
+        #rpgPlayer {
+            position: absolute;
+            width: 56px;
+            height: 56px;
+            top: 250px;
+            left: 420px;
+            z-index: 6;
+            transition: transform 0.1s steps(2);
+        }
+
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Sprite Color Designations */
+        .p-hair { background: #111111; }
+        .p-skin { background: #ffdbac; }
+        .p-glass { background: #e0f7fa; border: 1px solid #111111; opacity: 0.95; } /* Clear Spec Lenses */
+        .p-gframe { background: #111111; } /* Crisp Black Spectacle Frames */
+        .p-hood { background: #222222; } /* Clean Black Hoodie Base */
+        .p-draw { background: #ffffff; }
+        .p-boot { background: #6d4c41; } /* Brown Dungeon boots */
+
+        /* 8-Bit Step Walking Frame Animation Class Toggle */
+        .player-walking .avatar-grid div:nth-child(n+57) {
+            animation: walkFeet 0.15s infinite alternate steps(2);
+        }
+
+        @keyframes walkFeet {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-3px); }
+        }
+
+        /* --- 6. INTERACTIVE TERMINAL WINDOWS --- */
+        .terminal-overlay {
+            position: absolute;
+            top: 20px; left: 20px; right: 20px; bottom: 20px;
+            background: var(--game-black);
+            border: 8px double var(--quest-white);
+            padding: 30px;
+            display: none;
+            flex-direction: column;
+            z-index: 50;
+            overflow-y: auto;
+        }
+
+        .active-overlay { display: flex; }
+
+        .page-title {
+            font-size: 1.1rem;
+            color: var(--quest-green);
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+
+        .dialogue-text {
+            font-size: 0.8rem;
+            line-height: 1.8;
+            color: var(--quest-white);
+            margin-bottom: 16px;
+        }
+
+        .highlight-text { color: var(--star-gold); }
+        .cyan-text { color: var(--quest-cyan); }
+
+        .close-overlay-btn {
+            font-family: var(--pixel-font);
+            font-size: 0.7rem;
+            background: none;
+            border: 3px solid var(--quest-cyan);
+            color: var(--quest-cyan);
+            padding: 8px 16px;
+            align-self: flex-start;
+            margin-top: auto;
+            cursor: pointer;
+        }
+        .close-overlay-btn:hover { background: var(--quest-cyan); color: var(--game-black); }
+
+        /* --- INTERACTIVE SIDE-SCROLLING SCRAPBOOK LEVEL --- */
+        .scroller-stage {
+            width: 100%;
+            height: 250px;
+            background-color: #170f0a;
+            border: 4px solid var(--quest-cyan);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 15px;
+            background-image: linear-gradient(rgba(0,0,0,0.3) 2px, transparent 2px);
+            background-size: 100% 40px;
+        }
+
+        .scroller-track {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 2200px;
+            display: flex;
+            align-items: center;
+            padding-left: 200px;
+            transition: transform 0.1s linear;
+        }
+
+        .scroller-player {
+            position: absolute;
+            left: 50px;
+            top: 140px;
+            width: 48px;
+            height: 48px;
+            z-index: 10;
+        }
+
+        .scroller-node {
+            position: absolute;
+            width: 160px;
+            background: #222;
+            border: 3px solid #444;
+            padding: 6px;
+            text-align: center;
+            opacity: 0.2;
+            transform: scale(0.8);
+            transition: all 0.3s steps(4);
+        }
+
+        .scroller-node.discovered {
+            opacity: 1;
+            transform: scale(1);
+            border-color: var(--star-gold);
+        }
+
+        .scroller-node img, .scroller-node video {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            background: #000;
+        }
+
+        .scroller-node .node-caption {
+            font-size: 0.45rem;
+            margin-top: 6px;
+            color: #fff;
+        }
+
+        /* SpaceWar Mini-game layout */
+        #gameArena {
+            width: 100%; height: 220px; background: #000;
+            border: 4px solid var(--laser-red); position: relative; overflow: hidden; margin-top: 5px;
+        }
+        #playerShip { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 1.4rem; }
+        .laser { position: absolute; width: 4px; height: 12px; background: var(--quest-cyan); }
+        .alien { position: absolute; font-size: 1.3rem; }
+
+        /* Cake interactive components */
+        .blow-btn {
+            font-family: var(--pixel-font);
+            background: var(--laser-red);
+            color: white;
+            border: 4px solid white;
+            padding: 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .blow-btn:hover { background: gold; color: black; }
+
+        .kb-helper {
+            margin-top: 12px;
+            font-size: 0.65rem;
+            color: #666;
+            text-align: center;
+        }
+
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        @media(max-width: 500px) {
+            .page-title { font-size: 0.9rem; }
+            .dialogue-text { font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- RETRO DUNGEON PERFORMANCE BAR -->
+    <div class="hud-bar">
+        <div>
+            <span class="hud-text" id="proximityAlert" style="color: var(--quest-white);">HP: 99/99 STATUS: READY</span>
+        </div>
+        
+        <!-- SPOTIFY VINYL COMPONENT WIDGET -->
+        <div class="spotify-vinyl-container">
+            <div class="vinyl-disc" id="pixelVinyl"></div>
+            <button class="audio-btn muted" id="vinylAudioToggle">AUDIO: OFF</button>
+        </div>
+    </div>
+
+    <!-- SPOTIFY EMBED BACKGROUND TRACK PLAYER -->
+    <iframe id="spotifyPlaybackBridge" style="border-radius:12px; display:none;" src="https://open.spotify.com/embed/track/5QO79khgXwTYFmPqiGvI4E?utm_source=generator" width="100%" height="152" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+
+    <!-- MAIN DUNGEON COMPONENT GRID -->
+    <div class="game-viewport" id="viewport">
+        
+        <!-- Torch wall header graphics -->
+        <div class="dungeon-wall">
+            <span>🔥</span><span>🔥</span><span>🔥</span>
+        </div>
+
+        <!-- STAGE 1: BOOT INITIALIZER TERMINAL -->
+        <div class="terminal-overlay active-overlay" id="page-boot">
+            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; text-align: center;">
+                <p class="dialogue-text" style="color: var(--quest-cyan); margin-bottom: 20px; font-size: 0.9rem;">[ SYSTEM: BOOT SUCCESSFUL ]</p>
+                <h1 class="page-title" style="font-size: 1.8rem; color: var(--quest-white); margin-bottom: 25px; line-height: 1.3;">THE BIRTHDAY QUEST<br>HBD, MY LOVE!</h1>
+                <p class="dialogue-text" style="font-size: 0.9rem;">A customized memory build generated just for my <span class="highlight-text">PLAYER 1</span>.</p>
+                
+                <button class="close-overlay-btn" id="bootGameBtn" style="margin-top: 50px; font-size: 0.85rem; border-color: var(--quest-green); color: var(--quest-green);">PRESS NEXT TO INITIALIZE</button>
+            </div>
+        </div>
+
+        <!-- STAGE 2: INTERACTIVE SIDE-SCROLLER CAPTURED DATA ROOM -->
+        <div class="terminal-overlay" id="page-scrapbook">
+            <h2 class="page-title">> MEMORY LANE RUNNER: EXTRACTING FILES...</h2>
+            <p class="dialogue-text" style="font-size:0.65rem; color:var(--star-gold);">🎮 HOLD RIGHT ARROW KEY / D TO WALK FORWARD THROUGH THE TIMELINE</p>
+            
+            <div class="scroller-stage">
+                <div class="scroller-track" id="scrapbookTrack">
+                    <div class="scroller-node" style="left: 250px;" data-info="[NODE: I MISS YOU] Records indicate immediate cooperative alignment.">
+                        <img src="" alt="Photo 1">
+                        <div class="node-caption">[NODE: I MISS YOU]</div>
+                    </div>
+                    <div class="scroller-node" style="left: 600px;" data-info="[NODE: LAUGHS] High frequency happiness telemetry captured here.">
+                        <img src="" alt="Photo 2">
+                        <div class="node-caption">[NODE: LAUGHS]</div>
+                    </div>
+                    <div class="scroller-node" style="left: 950px;" data-info="[NODE: CUTIE NAMBEBE] Adorable moments captured in high definition.">
+                        <video src="" poster="" muted loop autoplay></video>
+                        <div class="node-caption">[NODE: CUTIE NAMBEBE]</div>
+                    </div>
+                    <div class="scroller-node" style="left: 1300px;" data-info="[NODE: COZY] Ultimate safety bunker core calibration complete.">
+                        <img src="" alt="Photo 4">
+                        <div class="node-caption">[NODE: COZY]</div>
+                    </div>
+                </div>
+                
+                <!-- Hero Proxy in Scroller Terminal -->
+                <div class="scroller-player" id="scrollerHero">
+                    <div class="avatar-grid">
+                        <div class="p-hair"></div><div class="p-hair"></div><div class="p-hair"></div><div class="p-hair"></div><div class="p-hair"></div><div class="p-hair"></div><div class="p-hair"></div><div class="p-hair"></div>
+                        <div class="p-hair"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-hair"></div>
+                        <div class="p-hair"></div><div class="p-gframe"></div><div class="p-glass"></div><div class="p-gframe"></div><div class="p-gframe"></div><div class="p-glass"></div><div class="p-gframe"></div><div class="p-hair"></div>
+                        <div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div>
+                        <div class="p-hair"></div><div class="p-hair"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-hair"></div><div class="p-hair"></div>
+                        <div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-draw"></div><div class="p-draw"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div>
+                        <div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div>
+                        <div class="p-boot"></div><div class="p-boot"></div><div class="p-game-black"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-game-black"></div><div class="p-boot"></div><div class="p-boot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="dialogue-text" id="scrollerStatusText" style="color: var(--quest-cyan); font-size: 0.7rem; background:#111; padding:12px; border:1px solid #333; min-height:45px;">
+                > Waiting for engine advance metrics...
+            </p>
+            
+            <button class="close-overlay-btn" onclick="closeAllOverlays()">◀ RETURN TO LOBBY MAP</button>
+        </div>
+
+        <!-- STAGE 3: INTERACTIVE SPACEWAR SIMULATION -->
+        <div class="terminal-overlay" id="page-spacewar">
+            <h2 class="page-title">> SIMULATION INTERFACE: SPACEWAR</h2>
+            <p class="dialogue-text">Destroy 5 enemy alien crafts to clear the level pathway.</p>
+            <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:8px;">
+                <span id="gameScoreText">DESTROYED: 0/5</span>
+                <span id="gameStatusText" style="color:var(--quest-cyan);">READY</span>
+            </div>
+            <div id="gameArena">
+                <div id="playerShip">🚀</div>
+            </div>
+            <button class="blow-btn" id="startGameBtn" style="margin-top:15px; width:100%;">START ENGAGEMENT</button>
+            <button class="close-overlay-btn" onclick="closeAllOverlays()">◀ ESCAPE TERMINAL</button>
+        </div>
+
+        <!-- STAGE 4: PIXEL CAKE POPUP LEVEL MODAL -->
+        <div class="terminal-overlay" id="page-cake-modal">
+            <h2 class="page-title" style="color: var(--star-gold); text-align: center;">🏆 ACHIEVEMENT UNLOCKED!</h2>
+            <div style="text-align: center; margin: 20px 0; font-size: 4rem; animation: bounce 0.4s infinite alternate steps(2);">🎂</div>
+            <p class="dialogue-text" style="text-align: center; font-size: 0.9rem; color: var(--quest-green);">
+                "You've unlocked another quest in your life!"
+            </p>
+            <button class="blow-btn" id="blowCandleBtn">🎂 BLOW THE CANDLE 🎂</button>
+        </div>
+
+        <!-- STAGE 5: CONGRATULATIONS CONVERSATION TREE -->
+        <div class="terminal-overlay" id="page-congrats-modal">
+            <h2 class="page-title" style="color: var(--quest-cyan);">✨ QUEST MILESTONE MET</h2>
+            <p class="dialogue-text" style="font-size: 1rem; line-height: 1.8;">
+                Congratulations! I love you and I'm proud of you for making it this far. ❤️
+            </p>
+            <p class="dialogue-text" style="font-size: 0.9rem; color: var(--star-gold); margin-top: 20px;">
+                Ready for your next quest with me?
+            </p>
+            <button class="close-overlay-btn" id="congratsAcceptBtn" style="border-color: var(--quest-green); color: var(--quest-green); width: 100%; text-align: center;">[ UNLOCK FINAL LOOT INTERFACE ]</button>
+        </div>
+
+        <!-- STAGE 6: THE FINAL TYPEWRITER LETTER CODES -->
+        <div class="terminal-overlay" id="page-loot">
+            <h2 class="page-title">> CHRONO DATA LOG DECRYPTED:</h2>
+            <div class="dialogue-text" id="typewriterTarget" style="line-height:2; white-space:pre-wrap; font-size:0.7rem;"></div>
+            <button class="close-overlay-btn" onclick="closeAllOverlays()">◀ TERMINATE COMMS LINK</button>
+        </div>
+
+        <!-- DUNGEON MAP PLACEMENT ASSETS -->
+        <div class="world-object" id="obj-scrapbook" style="top: 80px; left: 160px;">
+            🖼️<div class="object-label">CAPTURED DATA</div>
+        </div>
+
+        <div class="world-object" id="obj-spacewar" style="top: 80px; left: 660px;">
+            🕹️<div class="world-object-label object-label">SPACEWAR ARCADE</div>
+        </div>
+
+        <div class="world-object" id="obj-cake" style="top: 240px; left: 420px;">
+            🎂<div class="object-label">BIRTHDAY CAKE</div>
+        </div>
+
+        <div class="world-object" id="obj-loot" style="top: 420px; left: 420px;">
+            🎁<div class="object-label">BOSS LOOT BOX</div>
+        </div>
+
+        <!-- CONTROLLED PLAYER CHARACTER -->
+        <div id="rpgPlayer">
+            <div class="avatar-grid">
+                <!-- Row 1 --><div class="p-hair"></div><div class="p-hair"></div><div class="p-hair"></div><div class="p-hair"></div><div class="p-hair"></div><div class="p-hair"></div><div class="p-hair"></div><div class="p-hair"></div>
+                <!-- Row 2 --><div class="p-hair"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-hair"></div>
+                <!-- Row 3 --><div class="p-hair"></div><div class="p-gframe"></div><div class="p-glass"></div><div class="p-gframe"></div><div class="p-gframe"></div><div class="p-glass"></div><div class="p-gframe"></div><div class="p-hair"></div>
+                <!-- Row 4 --><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div>
+                <!-- Row 5 --><div class="p-hair"></div><div class="p-hair"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-skin"></div><div class="p-hair"></div><div class="p-hair"></div>
+                <!-- Row 6 --><div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-draw"></div><div class="p-draw"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div>
+                <!-- Row 7 --><div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-hood"></div>
+                <!-- Row 8 --><div class="p-boot"></div><div class="p-boot"></div><div class="p-game-black"></div><div class="p-hood"></div><div class="p-hood"></div><div class="p-game-black"></div><div class="p-boot"></div><div class="p-boot"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="kb-helper">🎮 CONTROL MOVEMENT USING ARROW KEYS OR WASD CONTROLS 🎮</div>
+
+    <!-- --- CORE INTERACTIVE ENGINE --- -->
+    <script>
+        const player = document.getElementById('rpgPlayer');
+        const viewport = document.getElementById('viewport');
+        const alertHud = document.getElementById('proximityAlert');
+        
+        const pixelVinyl = document.getElementById('pixelVinyl');
+        const vinylAudioToggle = document.getElementById('vinylAudioToggle');
+        const spotifyBridge = document.getElementById('spotifyPlaybackBridge');
+        let isMuted = true;
+
+        let scrollerX = 0;
+        let insideScrollerMode = false;
+        const track = document.getElementById('scrapbookTrack');
+        const scrollerHero = document.getElementById('scrollerHero');
+
+        let posX = 420; let posY = 250;
+        const stepSize = 20;
+        let overlayOpen = true; 
+        let tTimeout = null;
+        let walkTimeout = null;
+        let spacewarCleared = false;
+
+        const myCustomLoveLetter = `TO MY FAVORITE PLAYER 1 AND LOVE OF MY LIFE,
+
+HAPPY BIRTHDAY! 🚀👾
+
+OUT OF EVERYTHING LIFE HAS THROWN OUR WAY, I'M JUST SO GRATEFUL THAT I GET TO CELEBRATE ANOTHER BIRTHDAY WITH YOU. EVERY MEMORY WE'VE MADE, EVERY LAUGH WE'VE SHARED, EVERY CHALLENGE WE'VE FACED TOGETHER HAS LED US HERE, AND I WOULDN'T TRADE ANY OF IT FOR ANYTHING.
+
+THANK YOU FOR BEING MY COMFORT AFTER LONG DAYS, MY FAVORITE PERSON TO COME HOME TO, AND MY SAFE PLACE. JUST KNOW THAT NO MATTER HOW DIFFICULT THE GAME GETS, I'LL ALWAYS BE ROOTING FOR YOU. 
+
+YOU DON'T HAVE TO HAVE EVERYTHING FIGURED OUT. ONE QUEST AT A TIME LANG, BABY. YOU'VE ALREADY COME SO FAR, AND I'M SO PROUD OF YOU. 
+
+LIFE IS A LOT MORE FUN WHEN YOU'RE THE ONE BESIDE ME.
+
+I HOPE THIS NEW LEVEL BRINGS YOU HAPPINESS, GOOD HEALTH, EXCITING ADVENTURES, AND EVERY LITTLE THING YOU'VE BEEN HOPING FOR. YOU DESERVE ALL THE LOVE AND KINDNESS THIS WORLD HAS TO OFFER, AND I'LL ALWAYS BE ONE OF THE PEOPLE CHEERING YOU ON.
+
+NO MATTER WHERE LIFE TAKES US NEXT, I HOPE YOU NEVER FORGET ONE THING:
+
+I LOVE YOU. MORE THAN WORDS CAN EVER FULLY EXPLAIN.
+
+THANK YOU FOR LETTING ME BE PART OF YOUR STORY, AND THANK YOU FOR BEING SUCH AN IMPORTANT PART OF MINE. HERE'S TO UNLOCKING EVEN MORE MEMORIES TOGETHER, ONE LEVEL AT A TIME.
+
+SO TODAY, DON'T THINK TOO MUCH. ENJOY YOUR DAY, EAT LOTS OF GOOD FOOD, CELEBRATE YOURSELF, AND REMEMBER HOW LOVED YOU ARE.
+
+HAPPY BIRTHDAY, MY BABY. ❤️
+
+I LOVE YOU, AND DON'T EVER FORGET THAT.
+
+STAY LEGENDARY, RAAAAAH. ❤️💪
+
+AYENNE GANDA`;
+
+        const interactiveObjects = [
+            { id: 'obj-scrapbook', overlayId: 'page-scrapbook', x: 160, y: 80, name: "CAPTURED DATA" },
+            { id: 'obj-spacewar', overlayId: 'page-spacewar', x: 660, y: 80, name: "SPACEWAR ARCADE" },
+            { id: 'obj-cake', overlayId: 'page-cake-modal', x: 420, y: 240, name: "BIRTHDAY CAKE" },
+            { id: 'obj-loot', overlayId: 'page-loot', x: 420, y: 420, name: "BOSS LOOT BOX" }
+        ];
+
+        vinylAudioToggle.addEventListener('click', () => {
+            if (isMuted) {
+                isMuted = false;
+                vinylAudioToggle.innerText = "AUDIO: ON";
+                vinylAudioToggle.classList.remove('muted');
+                pixelVinyl.classList.add('vinyl-playing');
+                spotifyBridge.contentWindow.postMessage('{"command":"play"}', '*');
+            } else {
+                isMuted = true;
+                vinylAudioToggle.innerText = "AUDIO: OFF";
+                vinylAudioToggle.classList.add('muted');
+                pixelVinyl.classList.remove('vinyl-playing');
+                spotifyBridge.contentWindow.postMessage('{"command":"pause"}', '*');
+            }
+        });
+
+        document.getElementById('bootGameBtn').addEventListener('click', () => { closeAllOverlays(); });
+
+        // Trigger step frame animations toggles smoothly
+        function triggerWalkingState(targetElement) {
+            targetElement.classList.add('player-walking');
+            clearTimeout(walkTimeout);
+            walkTimeout = setTimeout(() => {
+                targetElement.classList.remove('player-walking');
+            }, 150);
+        }
+
+        // Hero Keyboard Handler Movement Loop mapping
+        window.addEventListener('keydown', (e) => {
+            let key = e.key.toLowerCase();
+
+            if (insideScrollerMode) {
+                if (key === 'arrowright' || key === 'd') {
+                    scrollerX -= 25;
+                    if(scrollerX < -1400) scrollerX = -1400;
+                    track.style.transform = `translateX(${scrollerX}px)`;
+                    scrollerHero.style.transform = "scaleX(1)";
+                    triggerWalkingState(scrollerHero);
+                    evaluateScrollerNodes();
+                }
+                if (key === 'arrowleft' || key === 'a') {
+                    scrollerX += 25;
+                    if(scrollerX > 0) scrollerX = 0;
+                    track.style.transform = `translateX(${scrollerX}px)`;
+                    scrollerHero.style.transform = "scaleX(-1)";
+                    triggerWalkingState(scrollerHero);
+                    evaluateScrollerNodes();
+                }
+                return;
+            }
+
+            if (overlayOpen) return;
+
+            let walked = false;
+            if (key === 'arrowup' || key === 'w') { posY = Math.max(posY - stepSize, 40); walked = true; }
+            if (key === 'arrowdown' || key === 's') { posY = Math.min(posY + stepSize, viewport.offsetHeight - 65); walked = true; }
+            if (key === 'arrowleft' || key === 'a') { posX = Math.max(posX - stepSize, 15); player.style.transform = "scaleX(-1)"; walked = true; }
+            if (key === 'arrowright' || key === 'd') { posX = Math.min(posX + stepSize, viewport.offsetWidth - 65); player.style.transform = "scaleX(1)"; walked = true; }
+
+            if (walked) {
+                player.style.top = `${posY}px`;
+                player.style.left = `${posX}px`;
+                triggerWalkingState(player);
+                checkObjectProximities();
+            }
+        });
+
+        function evaluateScrollerNodes() {
+            let nodes = document.querySelectorAll('.scroller-node');
+            let heroWorldX = -scrollerX + 75;
+            let directActiveText = "> Walking down memory axis data registers...";
+
+            nodes.forEach(node => {
+                let nodeX = parseInt(node.style.left);
+                if (Math.abs(heroWorldX - nodeX) < 130) {
+                    node.classList.add('discovered');
+                    directActiveText = `> EXTRACTED: ${node.getAttribute('data-info')}`;
+                }
+            });
+            document.getElementById('scrollerStatusText').innerText = directActiveText;
+        }
+
+        function checkObjectProximities() {
+            let activeNear = false;
+            interactiveObjects.forEach(obj => {
+                if (obj.id === 'obj-cake' && !spacewarCleared) return;
+
+                let dist = Math.sqrt(Math.pow((posX - obj.x), 2) + Math.pow((posY - obj.y), 2));
+                if (dist < 50) {
+                    activeNear = true;
+                    alertHud.innerText = `[PRESS ENTER TO INTERACT WITH ${obj.name}]`;
+                    alertHud.style.color = "var(--quest-green)";
+                    
+                    window.onkeydown = (event) => {
+                        if (event.key === "Enter") {
+                            openTerminalOverlay(obj.overlayId);
+                        }
+                    };
+                }
+            });
+
+            if (!activeNear) {
+                alertHud.innerText = "HP: 99/99 STATUS: READY";
+                alertHud.style.color = "var(--quest-white)";
+                window.onkeydown = null;
+            }
+        }
+
+        function openTerminalOverlay(id) {
+            overlayOpen = true;
+            document.getElementById(id).classList.add('active-overlay');
+            if (id === 'page-loot') runTypewriter();
+            if (id === 'page-scrapbook') {
+                insideScrollerMode = true;
+                scrollerX = 0;
+                track.style.transform = `translateX(0px)`;
+                document.querySelectorAll('.scroller-node').forEach(n => n.classList.remove('discovered'));
+                evaluateScrollerNodes();
+            }
+        }
+
+        function closeAllOverlays() {
+            document.querySelectorAll('.terminal-overlay').forEach(overlay => {
+                overlay.classList.remove('active-overlay');
+            });
+            if(tTimeout) clearTimeout(tTimeout);
+            document.getElementById('typewriterTarget').innerHTML = '';
+            overlayOpen = false;
+            insideScrollerMode = false;
+            checkObjectProximities();
+        }
+
+        document.getElementById('blowCandleBtn').addEventListener('click', () => {
+            document.getElementById('page-cake-modal').classList.remove('active-overlay');
+            document.getElementById('page-congrats-modal').classList.add('active-overlay');
+        });
+
+        document.getElementById('congratsAcceptBtn').addEventListener('click', () => {
+            closeAllOverlays();
+        });
+
+        function runTypewriter() {
+            let idx = 0; const div = document.getElementById('typewriterTarget'); div.innerHTML = '';
+            function write() {
+                if(idx < myCustomLoveLetter.length) {
+                    div.innerHTML += myCustomLoveLetter.charAt(idx); idx++;
+                    tTimeout = setTimeout(write, 25);
+                }
+            }
+            write();
+        }
+
+        // --- SPACEWAR ENGINE ---
+        const arena = document.getElementById('gameArena');
+        const ship = document.getElementById('playerShip');
+        const startGBtn = document.getElementById('startGameBtn');
+        let score = 0; let running = false; let gameInt, spawnInt;
+
+        startGBtn.addEventListener('click', () => {
+            if(running) return;
+            running = true; score = 0;
+            document.getElementById('gameStatusText').innerText = "STATUS: ACTIVE";
+            document.getElementById('gameScoreText').innerText = `DESTROYED: ${score}/5`;
+            gameInt = setInterval(gameLoop, 40);
+            spawnInt = setInterval(spawnAlien, 1200);
+        });
+
+        arena.addEventListener('mousemove', (e) => {
+            if(!running) return;
+            let rect = arena.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            ship.style.left = `${Math.min(Math.max(x, 10), rect.width - 30)}px`;
+        });
+
+        function spawnAlien() {
+            if(!running) return;
+            let alien = document.createElement('div');
+            alien.className = 'alien'; alien.innerText = '👾';
+            alien.style.left = `${Math.random() * 90}%`; alien.style.top = '0px';
+            arena.appendChild(alien);
+        }
+
+        function gameLoop() {
+            let aliens = document.querySelectorAll('.alien');
+            aliens.forEach(a => {
+                let top = parseInt(a.style.top) || 0;
+                if(top > 200) { a.remove(); } else { a.style.top = `${top + 5}px`; }
+            });
+
+            if(Math.random() < 0.2) {
+                let l = document.createElement('div'); l.className = 'laser';
+                l.style.left = `${ship.offsetLeft + 8}px`; l.style.bottom = '25px';
+                arena.appendChild(l);
+            }
+
+            let lasers = document.querySelectorAll('.laser');
+            lasers.forEach(l => {
+                let bot = parseInt(l.style.bottom) || 0;
+                if(bot > 220) { l.remove(); } else {
+                    l.style.bottom = `${bot + 7}px`;
+                    let lLeft = l.offsetLeft; let lTop = arena.offsetHeight - bot;
+                    aliens.forEach(a => {
+                        if(Math.abs(lLeft - a.offsetLeft) < 25 && Math.abs(lTop - a.offsetTop) < 25) {
+                            a.remove(); l.remove(); score++;
+                            document.getElementById('gameScoreText').innerText = `DESTROYED: ${score}/5`;
+                            if(score >= 5) {
+                                running = false; clearInterval(gameInt); clearInterval(spawnInt);
+                                document.getElementById('gameStatusText').innerText = "QUEST UNLOCKED!";
+                                document.getElementById('gameStatusText').style.color = "var(--quest-green)";
+                                document.querySelectorAll('.alien, .laser').forEach(el => el.remove());
+                                
+                                spacewarCleared = true;
+                                document.getElementById('obj-cake').style.display = 'flex';
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>
